@@ -98,14 +98,10 @@ public class FamilyRulesController {
             }
             if (familyRulesByFamilyId != null && !familyRulesByFamilyId.isEmpty()) {
                 for (FamilyRule frId : familyRulesByFamilyId) {
-                    if (fr != null && !fr.isEmpty()) {
-                        for (FamilyRule familyRule : fr) {
-                            if (!frId.getId().equals(familyRule.getId())) {
-                                fr.add(frId);
-                            }
+                    if (familyRulesByAutor != null && !familyRulesByAutor.isEmpty()) {
+                        if (!autor.equals(frId.getAutor())) {
+                            fr.add(frId);
                         }
-                    } else if (fr == null || fr.isEmpty()) {
-                        fr.add(frId);
                     }
                 }
             }

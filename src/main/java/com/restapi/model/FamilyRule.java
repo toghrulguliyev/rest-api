@@ -15,6 +15,8 @@ public class FamilyRule {
     private String autor;
     private String familyId = "";
 
+    public FamilyRule() {}
+
     public FamilyRule(String autor, String ruleName, String rule, String reason, String forWho, String id) {
         this.ruleName = ruleName;
         this.reason = reason;

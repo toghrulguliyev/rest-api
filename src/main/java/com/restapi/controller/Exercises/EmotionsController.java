@@ -20,6 +20,7 @@ public class EmotionsController {
 
     @Autowired
     EmotionsRepository emoRepository;
+    @Autowired
     UserRepository userRepository;
 
     @PostMapping("get_emotions")
