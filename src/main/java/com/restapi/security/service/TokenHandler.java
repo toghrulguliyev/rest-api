@@ -16,7 +16,7 @@ import java.util.Map;
 @Component
 public class TokenHandler{
 
-    private static int tokenExpirationTime = 30;
+    private static int tokenExpirationTime = 20;
 
     @Value("security.token.secret.key")
     private String tokenKey;
@@ -32,15 +32,16 @@ public class TokenHandler{
         } else {
             Map<String, Object> tokenData = new HashMap<>();
             tokenData.put("clientType", user.getAccType());
-            tokenData.put("userID", id);
+            //tokenData.put("userID", id);
             tokenData.put("username", user.getUsername());
             tokenData.put("token_create_date", LocalDateTime.now());
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.DATE, tokenExpirationTime);
             tokenData.put("token_expiration_date", calendar.getTime());
             JwtBuilder jwtBuilder = Jwts.builder();
-            jwtBuilder.setExpiration(calendar.getTime());
             jwtBuilder.setClaims(tokenData);
+            jwtBuilder.setId(id.toString());
+            jwtBuilder.setExpiration(calendar.getTime());
             return jwtBuilder.signWith(SignatureAlgorithm.HS512, tokenKey).compact();
         }
     }

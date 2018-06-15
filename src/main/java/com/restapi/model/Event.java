@@ -23,7 +23,7 @@ public class Event {
     private String eventType;
     private String notifyUser;
 
-    public Event(){ }
+    public Event() {}
 
     public Event(String message, String mName, String mStartTime, String mEndTime, String mColor, String autor) {
         this.id = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;

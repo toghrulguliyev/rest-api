@@ -28,8 +28,6 @@ public class EmotionsController {
 
         Emotions emo = emoRepository.findByAutor(username);
 
-        System.out.println(emo.getAutor());
-
         if (emo == null) {
             return new ResponseEntity<Emotions>(HttpStatus.NO_CONTENT);
         } else {

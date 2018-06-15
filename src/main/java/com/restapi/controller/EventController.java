@@ -50,12 +50,12 @@ public class EventController {
         } else if ((privateEvents == null || privateEvents.isEmpty()) && familyEvents.size() > 0) {
             return new ResponseEntity<List<Event>>(familyEvents, HttpStatus.OK);
         } else if (privateEvents.size() > 0 && familyEvents.size() > 0) {
-            sumEvents = privateEvents;
-            for (Event privatEvent : privateEvents) {
-                for (Event famEvent : familyEvents) {
-                    if (!privatEvent.getAutor().equals(famEvent.getAutor())) {
-                        sumEvents.add(famEvent);
-                    }
+            for (Event event : privateEvents) {
+                sumEvents.add(event);
+            }
+            for (Event event : familyEvents) {
+                if (!username.equals(event.getAutor())) {
+                    sumEvents.add(event);
                 }
             }
             return new ResponseEntity<List<Event>>(sumEvents, HttpStatus.OK);

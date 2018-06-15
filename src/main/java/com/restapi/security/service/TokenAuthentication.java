@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 
 @Service
 public class TokenAuthentication implements TokenAuthenticationService {
@@ -43,15 +44,25 @@ public class TokenAuthentication implements TokenAuthenticationService {
         if (tokenData != null) {
             User user = getUserFromToken(tokenData);
 
-            //if (user.isAccountNonExpired())
-
             if (user != null) {
+                System.out.println("TODAY: " + new Date());
+                System.out.println(tokenData.getBody().getExpiration());
+                System.out.println(tokenData.getBody().getId());
+                System.out.println(tokenData.getBody().get("token_expiration_date"));
+//                Date now = new Date();
+//                if (now.before(tokenData.getBody().getExpiration())) {
+//                    user.setEnabled(true);
+//                } else {
+//                    user.setEnabled(false);
+//                }
 
                 return new UserAuthentication(user);
             }
         }
         return null;
     }
+
+
 
     private Jws<Claims> parseToken(final String token) {
         if (token != null) {
