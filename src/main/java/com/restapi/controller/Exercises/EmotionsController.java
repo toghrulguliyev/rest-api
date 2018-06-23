@@ -44,13 +44,21 @@ public class EmotionsController {
         } else {
             if (user.getParentUsernames() == null || user.getParentUsernames().isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            } else {
-                for (int i = 0; i < user.getParentUsernames().size(); i++) {
-                    emoList.add(emoRepository.findByAutor(user.getParentUsernames().get(i)));
+            } else if (user.getParentUsernames() != null && !user.getParentUsernames().isEmpty()){
+                for (String usrname :  user.getParentUsernames()) {
+                    Emotions emo = emoRepository.findByAutor(usrname);
+                    if (emo != null) {
+                        emoList.add(emo);
+                    }
                 }
-                return new ResponseEntity<List<Emotions>>(emoList, HttpStatus.OK);
+                if (emoList == null || emoList.isEmpty()) {
+                    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+                } else if (emoList != null && !emoList.isEmpty()) {
+                    return new ResponseEntity<List<Emotions>>(emoList, HttpStatus.OK);
+                }
             }
         }
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @PostMapping("save_emotions")

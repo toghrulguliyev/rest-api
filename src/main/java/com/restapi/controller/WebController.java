@@ -33,8 +33,8 @@ public class WebController {
         body.put("priority", "high");
 
         JSONObject notification = new JSONObject();
-        notification.put("title", "Spring Boot Benachrichtigung");
-        notification.put("body", "Benachrichtigung wirklich funktioniert!");
+        notification.put("title", "Emotionstest Erinnerung");
+        notification.put("body", "Sie müssen die Übung wiederholen!");
 
         JSONObject data = new JSONObject();
         data.put("Key-1", "Data 1");
@@ -80,12 +80,12 @@ public class WebController {
     public ResponseEntity<String> newFamilyEventNotification(String title, String saveBody, String fcmToken) throws JSONException {
 
         JSONObject body = new JSONObject();
-        body.put("to", "dRE8uqIB8Rs:APA91bEdrlS-IcsyR1WZpUfKQ7nArMHWbqSIR53tnVNwYJm4p-fuEdiGmPttcDlD1f1Z09r2-ztzGzHbtBU_FhaI49MpaJo4QCoxntNCgxbJBm_C1r8lcFYIQC3TG5q4Qf6Bgj96kE8G");
+        body.put("to", fcmToken);
         body.put("priority", "high");
 
         JSONObject notification = new JSONObject();
-        notification.put("title", "Kalendar");
-        notification.put("body", "Ein neuer Termin wurde hinzugefügt!");
+        notification.put("title", title);
+        notification.put("body", saveBody);
 
         JSONObject data = new JSONObject();
         data.put("Key-1", "Data 1");

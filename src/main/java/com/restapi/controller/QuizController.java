@@ -1,6 +1,7 @@
 package com.restapi.controller;
 
 import com.restapi.model.Response;
+import com.restapi.model.User;
 import com.restapi.model.quizDuel.Duel;
 import com.restapi.model.quizDuel.Question;
 import com.restapi.model.quizDuel.Results;
@@ -33,6 +34,8 @@ public class QuizController {
     QuestionRepository questionRepository;
     @Autowired
     UserRepository userRepository;
+    @Autowired
+    WebController webController;
 
     @PostMapping("save_question")
     public ResponseEntity<Response> saveQuestion(@RequestBody Document doc) {
@@ -57,17 +60,102 @@ public class QuizController {
         } else if ((autorDuels == null || autorDuels.isEmpty()) && (oppoDuels != null && !oppoDuels.isEmpty())) {
             return new ResponseEntity<List<Duel>>(oppoDuels, HttpStatus.OK);
         } else if ((autorDuels != null && !autorDuels.isEmpty()) && (oppoDuels != null && !oppoDuels.isEmpty())) {
-            duels = autorDuels;
-            for (Duel duel1 : autorDuels) {
-                for (Duel duel2 : oppoDuels) {
-                   if (!duel1.getId().equals(duel2.getId())) {
-                       duels.add(duel2);
-                   }
-                }
+            for (Duel duel : autorDuels) {
+                duels.add(duel);
             }
+            for (Duel duel : oppoDuels) {
+                duels.add(duel);
+            }
+//            for (Duel duel1 : autorDuels) {
+//                for (Duel duel2 : oppoDuels) {
+//                   if (duel1.getAutor().equals(duel2.getOpponent())) {
+//                       duels.add(duel2);
+//                   }
+//                }
+//            }
             return new ResponseEntity<List<Duel>>(duels, HttpStatus.OK);
         }
         return new ResponseEntity<List<Duel>>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping("get_results")
+    public ResponseEntity<Results> getOverallScore(@RequestParam("username") String username) {
+        List<Duel> autorDuels = new ArrayList<Duel>();
+        List<Duel> oppoDuels = new ArrayList<Duel>();
+        List<Duel> duels = new ArrayList<Duel>();
+        List<Score> scores = new ArrayList<Score>();
+        autorDuels = duelRepository.findAllByAutor(username);
+        oppoDuels = duelRepository.findAllByOpponent(username);
+        if ((autorDuels == null || autorDuels.isEmpty()) && (oppoDuels == null || oppoDuels.isEmpty())) {
+            return new ResponseEntity<Results>(HttpStatus.NO_CONTENT);
+        } else if ((autorDuels != null && !autorDuels.isEmpty()) && (oppoDuels == null || oppoDuels.isEmpty())) {
+            for (Duel duel : autorDuels) {
+                if (duel.isAutorStatus()) {
+                    scores.add(duel.getScore());
+                }
+            }
+        } else if ((autorDuels == null || autorDuels.isEmpty()) && (oppoDuels != null && !oppoDuels.isEmpty())) {
+            for (Duel duel : oppoDuels) {
+                if (duel.isOpponentStatus()) {
+                    scores.add(duel.getScore());
+                }
+            }
+        } else if ((autorDuels != null && !autorDuels.isEmpty()) && (oppoDuels != null && !oppoDuels.isEmpty())) {
+            for (Duel duel : autorDuels) {
+                duels.add(duel);
+            }
+            for (Duel duel1 : autorDuels) {
+                for (Duel duel2 : oppoDuels) {
+                    if (!duel1.getId().equals(duel2.getId())) {
+                        duels.add(duel2);
+                    }
+                }
+            }
+
+            for (Duel duel : duels) {
+                if (duel.getAutor().equals(username)) {
+                    if (duel.isAutorStatus()) {
+                        scores.add(duel.getScore());
+                    }
+                } else if (duel.getOpponent().equals(username)) {
+                    if (duel.isOpponentStatus()) {
+                        scores.add(duel.getScore());
+                    }
+                }
+            }
+        }
+
+            if (scores == null || scores.isEmpty()) {
+                return new ResponseEntity<Results>(HttpStatus.NO_CONTENT);
+            } else if (scores != null && !scores.isEmpty()) {
+                Results results = new Results();
+                results.setPlayedDuels(scores.size());
+                results.setAnsweredQuestions(scores.size() * 10);
+                int right = 0;
+                for (Score score : scores) {
+                    if (username.equals(score.getAutor())) {
+                        right = right + score.getScoreAutor();
+                    } else if (username.equals(score.getOpponent())) {
+                        right = right + score.getScoreOpponent();
+                    }
+                }
+                results.setRightAnswered(right);
+                int wrong = 0;
+                for (Score score : scores) {
+                    if (username.equals(score.getAutor())) {
+                        wrong = wrong + (10 - score.getScoreAutor());
+                    } else if (username.equals(score.getOpponent())) {
+                        wrong = wrong + (10 - score.getScoreOpponent());
+                    }
+                }
+                results.setWrongAnswered(wrong);
+                double wrong_ans = (wrong * 10) / scores.size();
+                double right_ans = (right * 10) / scores.size();
+                results.setAnsweredWrong(wrong_ans);
+                results.setAnsweredRight(right_ans);
+                return new ResponseEntity<Results>(results, HttpStatus.OK);
+            }
+            return new ResponseEntity<Results>(HttpStatus.NO_CONTENT);
     }
 
     @PostMapping("create_duel")
@@ -95,6 +183,12 @@ public class QuizController {
             Duel duel = new Duel(username, opponent, randomQuestions, "Aktiv", category);
             duelRepository.save(duel);
             scoreRepository.save(duel.getScore());
+            User user = userRepository.findByUsername(opponent);
+            if (user != null) {
+                if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+                    webController.newFamilyEventNotification(username + " hat ein neues Duell erstellt", "Fragenkaterogie: " + duel.getCategory(), user.getFcmToken());
+                }
+            }
             Response response = new Response("Duell erzeugt", 201);
             return new ResponseEntity<Response>(response, HttpStatus.CREATED);
         }
@@ -118,13 +212,43 @@ public class QuizController {
                 duel.setOpponentScore(score);
                 duel.setOpponentStatus(true);
             }
+            if (duel.isOpponentStatus() && duel.isAutorStatus()) {
+                if (duel.getAutorScore() > duel.getOpponentScore()) {
+                    duel.setWinner(duel.getAutor());
+                } else if (duel.getAutorScore() < duel.getOpponentScore()) {
+                    duel.setWinner(duel.getOpponent());
+                } else if (duel.getAutorScore() == duel.getOpponentScore()) {
+                    duel.setWinner("Unentschieden");
+                }
+                duel.setStatus("Spiel beendet");
+            } else if (!duel.isOpponentStatus() && duel.isAutorStatus()) {
+                duel.setStatus("Erwarte " + duel.getOpponent());
+            } else if (duel.isOpponentStatus() && !duel.isAutorStatus()) {
+                duel.setStatus("Erwarte " + duel.getAutor());
+            }
             duelRepository.save(duel);
+
+            if (type.equals("autor")) {
+                User user = userRepository.findByUsername(duel.getAutor());
+                if (user != null) {
+                    if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+                        webController.newFamilyEventNotification(username + " hat gerade gespielt", "Fragenkaterogie: " + duel.getCategory(), user.getFcmToken());
+                    }
+                }
+            } else if (type.equals("opponent")) {
+                User user = userRepository.findByUsername(duel.getOpponent());
+                if (user != null) {
+                    if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+                        webController.newFamilyEventNotification(username + " hat gerade gespielt", "Fragenkaterogie: " + duel.getCategory(), user.getFcmToken());
+                    }
+                }
+            }
             Response response = new Response("Punktestand aktualisiert", 200);
             return new ResponseEntity<Response>(response, HttpStatus.OK);
         }
     }
 
-    @PostMapping("get_results")
+    @PostMapping("get_my_results")
     public ResponseEntity<Results> getResults(@RequestParam("username") String username) {
 
         Results results = new Results();
@@ -134,14 +258,20 @@ public class QuizController {
         autorScore = scoreRepository.findAllByAutor(username);
         oppoScore = scoreRepository.findAllByOpponent(username);
 
+        //autor_duels = duelRepository.findAllByAutor(username);
+
+
         if ((autorScore == null || autorScore.isEmpty()) && (oppoScore == null || oppoScore.isEmpty())) {
             return new ResponseEntity<Results>(HttpStatus.NO_CONTENT);
         } else if ((autorScore != null && !autorScore.isEmpty()) && (oppoScore == null || oppoScore.isEmpty())) {
             scores = autorScore;
+
         } else if ((autorScore == null || autorScore.isEmpty()) && (oppoScore != null && !oppoScore.isEmpty())) {
             scores = oppoScore;
         } else if ((autorScore != null && !oppoScore.isEmpty()) && (oppoScore != null && !oppoScore.isEmpty())) {
-            scores = autorScore;
+            for (Score score : autorScore) {
+                scores.add(score);
+            }
             for (Score score1 : autorScore) {
                 for (Score score2 : oppoScore) {
                     if (!score1.getId().equals(score2.getId())) {
@@ -173,6 +303,21 @@ public class QuizController {
         results.setAnsweredWrong((wrong/(scores.size() * 10)) * 100);
         results.setAnsweredRight((right/(scores.size() * 10)) * 100);
         return new ResponseEntity<Results>(results, HttpStatus.OK);
+    }
+
+    @PostMapping("remove_duel")
+    public ResponseEntity<Response> removeDuel(@RequestParam("id") String id) {
+
+        long check = duelRepository.removeDuelById(id);
+
+        if (check == 1) {
+            Response response = new Response("Duell erfolgreich gelöscht", 200);
+            return new ResponseEntity<Response>(response, HttpStatus.OK);
+        } else {
+            Response response = new Response("Duell löschen fehlgeschlagen", 404);
+            return new ResponseEntity<Response>(response, HttpStatus.NOT_FOUND);
+        }
+
     }
 
 }

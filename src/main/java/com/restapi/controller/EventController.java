@@ -7,6 +7,7 @@ import com.restapi.model.User;
 import com.restapi.repository.EventRepository;
 import com.restapi.repository.UserRepository;
 import org.bson.Document;
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -107,7 +108,7 @@ public class EventController {
     }
 
 
-    public void sendNotification(Event event) {
+    public void sendNotification(Event event) throws JSONException {
         List<User> users1 = new ArrayList<User>();
         User user1 = userRepository.findByUsername(event.getAutor());
         List<String> members = user1.getParentUsernames();

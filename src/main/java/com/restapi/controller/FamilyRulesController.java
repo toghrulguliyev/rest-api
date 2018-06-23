@@ -10,6 +10,7 @@ import com.restapi.model.User;
 import com.restapi.repository.FamilyRuleRepository;
 import com.restapi.repository.UserRepository;
 import org.bson.Document;
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class FamilyRulesController {
     WebController webController;
 
     @PostMapping("/save_rule")
-    public ResponseEntity<Response> saverule(@RequestBody Document doc) {
+    public ResponseEntity<Response> saverule(@RequestBody Document doc) throws JSONException {
 
         FamilyRule fr = FamilyRuleDTOConverter.documentToFamilyRule(doc);
         FamilyRule oldFr = ruleRepository.getFamilyRuleById(fr.getId());

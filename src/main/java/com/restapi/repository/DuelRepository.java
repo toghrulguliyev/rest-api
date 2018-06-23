@@ -13,4 +13,6 @@ public interface DuelRepository extends MongoRepository<Duel, String> {
 
     public Duel getById(String id);
 
+    public Long removeDuelById(String id);
+
 }
